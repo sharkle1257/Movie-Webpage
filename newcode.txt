@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ai DOO DOO – Movie Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            --card: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --button: #ff9800;
+        }
+
+        body[data-theme="light"] {
+            --bg: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            --card: rgba(255, 255, 255, 0.9);
+            --text: #111;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text);
+            transition: 0.4s ease;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        h6 {
+            text-align: center;
+            opacity: 0.7;
+            margin: 6px 0 25px;
+        }
+
+        /* THEME SWITCH */
+        .theme-switch {
+            position: relative;
+            width: 52px;
+            height: 26px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+        }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: #888;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .theme-switch input:checked + .slider {
+            background: var(--button);
+        }
+
+        .theme-switch input:checked + .slider::before {
+            transform: translateX(26px);
+        }
+
+        /* SEARCH */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--button);
+        }
+
+        /* MOVIE CARD */
+        .movie-card {
+            display: none;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .movie-card img {
+            width: 260px;
+            border-radius: 16px;
+        }
+
+        .movie-info p {
+            line-height: 1.6;
+            margin: 6px 0;
+        }
+
+        .rating {
+            margin-top: 10px;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        .playlist-btn {
+            margin-top: 15px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            background: #00e5ff;
+        }
+
+        .playlist-msg {
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .error {
+            text-align: center;
+            color: #ff5252;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .movie-card {
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+            }
+            .movie-card img {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="logo">🎬 Ai DOO DOO </div> <div>(=^･ｪ･^=)</div>
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <h6>aidoodoo.com</h6>
+
+    <div class="search-box">
+        <input type="text" id="title" placeholder="Movie title">
+        <input type="text" id="year" placeholder="Year (optional)">
+        <button onclick="searchMovie()">Search</button>
+    </div>
+
+    <div class="movie-card" id="movieCard">
+        <img id="poster">
+        <div class="movie-info">
+            <h2 id="movieTitle"></h2>
+            <p><strong>Year:</strong> <span id="movieYear"></span></p>
+            <p><strong>Rated:</strong> <span id="movieRated"></span></p>
+            <p><strong>Runtime:</strong> <span id="movieRuntime"></span></p>
+            <p><strong>Language:</strong> <span id="movieLanguage"></span></p>
+            <p id="moviePlot"></p>
+            <div class="rating">⭐ IMDb: <span id="movieRating"></span></div>
+
+            <button class="playlist-btn" onclick="addToPlaylist()">➕ Add to Playlist</button>
+            <div class="playlist-msg" id="playlistMsg"></div>
+        </div>
+    </div>
+
+    <div class="error" id="error"></div>
+</div>
+
+<script>
+/* THEME */
+const toggle = document.getElementById("themeToggle");
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme) {
+    document.body.dataset.theme = savedTheme;
+    toggle.checked = savedTheme === "light";
+}
+
+toggle.addEventListener("change", () => {
+    const theme = toggle.checked ? "light" : "dark";
+    document.body.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+});
+
+/* MOVIE + PLAYLIST */
+let currentTitle = "";
+let currentYear = "";
+
+async function searchMovie() {
+    const title = document.getElementById("title").value.trim();
+    const year = document.getElementById("year").value.trim();
+    const error = document.getElementById("error");
+    const card = document.getElementById("movieCard");
+    const msg = document.getElementById("playlistMsg");
+
+    error.textContent = "";
+    msg.textContent = "";
+    card.style.display = "none";
+
+    if (!title) {
+        error.textContent = "Please enter a movie title.";
+        return;
+    }
+
+    try {
+        const url = new URL("http://127.0.0.1:8000/movie");
+        url.searchParams.set("title", title);
+        if (year) url.searchParams.set("year", year);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        poster.src = data.Poster !== "N/A"
+            ? data.Poster
+            : "https://via.placeholder.com/260x390?text=No+Poster";
+
+        movieTitle.textContent = data.Title;
+        movieYear.textContent = data.Year;
+        movieRated.textContent = data.Rated;
+        movieRuntime.textContent = data.Runtime;
+        movieLanguage.textContent = data.Language;
+        moviePlot.textContent = data.Plot;
+        movieRating.textContent = data.imdbRating;
+
+        currentTitle = data.Title;
+        currentYear = data.Year;
+
+        card.style.display = "flex";
+    } catch {
+        error.textContent = "Movie not found or server not running.";
+    }
+}
+
+async function addToPlaylist() {
+    const msg = document.getElementById("playlistMsg");
+
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:8000/playlist/add?title=${encodeURIComponent(currentTitle)}&year=${currentYear}`,
+            { method: "POST" }
+        );
+        const data = await res.json();
+
+        msg.style.color = data.error ? "#ff5252" : "#00e676";
+        msg.textContent = data.error || "✅ Added to playlist!";
+    } catch {
+        msg.style.color = "#ff5252";
+        msg.textContent = "Server error.";
+    }
+}
+</script>
+
+</body>
+</html>

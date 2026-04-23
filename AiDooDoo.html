@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ai DOO DOO – Movie Search</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    --card: rgba(255,255,255,0.1);
+    --text: #fff;
+    --button: #ff9800;
+}
+
+body[data-theme="light"] {
+    --bg: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    --card: rgba(255,255,255,0.9);
+    --text: #111;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: Inter, sans-serif;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text);
+}
+
+.container {
+    width: 90%;
+    max-width: 900px;
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 800;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+h6 {
+    text-align: center;
+    opacity: 0.7;
+    margin: 6px 0 25px;
+}
+
+/* THEME SWITCH */
+.theme-switch {
+    position: relative;
+    width: 52px;
+    height: 26px;
+}
+
+.theme-switch input {
+    opacity: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    background: #888;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+.slider::before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.theme-switch input:checked + .slider {
+    background: var(--button);
+}
+
+.theme-switch input:checked + .slider::before {
+    transform: translateX(26px);
+}
+
+/* SEARCH */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+}
+
+.search-box button {
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: var(--button);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* MOVIE CARD */
+.movie-card {
+    display: none;
+    gap: 25px;
+}
+
+.movie-card img {
+    width: 260px;
+    border-radius: 16px;
+}
+
+.movie-info p {
+    margin: 6px 0;
+}
+
+.rating {
+    color: #ffcc00;
+    font-weight: 600;
+}
+
+.playlist-btn {
+    margin-top: 15px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: #00e5ff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.error {
+    color: #ff5252;
+    font-weight: 600;
+    text-align: center;
+}
+
+#playlistContainer {
+    display: none;
+    margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+    <div class="logo">🎬 Ai DOO DOO <span style="font-size:16px">(=^･ｪ･^=)</span></div>
+    <div style="display:flex; gap:12px; align-items:center;">
+        <button class="playlist-btn" onclick="showPlaylist()">📂 Playlist</button>
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+</div>
+
+<h6>aidoodoo.com</h6>
+
+<div class="search-box">
+    <input id="title" placeholder="Movie title">
+    <input id="year" placeholder="Year (optional)">
+    <button onclick="searchMovie()">Search</button>
+</div>
+
+<div class="movie-card" id="movieCard">
+    <img id="poster">
+    <div class="movie-info">
+        <h2 id="movieTitle"></h2>
+        <p><strong>Year:</strong> <span id="movieYear"></span></p>
+        <p><strong>Rated:</strong> <span id="movieRated"></span></p>
+        <p><strong>Runtime:</strong> <span id="movieRuntime"></span></p>
+        <p><strong>Language:</strong> <span id="movieLanguage"></span></p>
+        <p id="moviePlot"></p>
+        <div class="rating">⭐ IMDb: <span id="movieRating"></span></div>
+
+        <button class="playlist-btn" onclick="addToPlaylist()">➕ Add to Playlist</button>
+        <div id="playlistMsg"></div>
+    </div>
+</div>
+
+<div id="playlistContainer"></div>
+<div class="error" id="error"></div>
+
+</div>
+
+<script>
+/* =======================
+   THEME
+======================= */
+const toggle = document.getElementById("themeToggle");
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme) {
+    document.body.dataset.theme = savedTheme;
+    toggle.checked = savedTheme === "light";
+}
+
+toggle.addEventListener("change", () => {
+    const theme = toggle.checked ? "light" : "dark";
+    document.body.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+});
+
+/* =======================
+   MOVIE SEARCH
+======================= */
+let currentTitle = "";
+let currentYear = "";
+
+async function searchMovie() {
+    const title = document.getElementById("title").value.trim();
+    const year = document.getElementById("year").value.trim();
+    const error = document.getElementById("error");
+    const card = document.getElementById("movieCard");
+
+    error.textContent = "";
+    card.style.display = "none";
+
+    if (!title) {
+        error.textContent = "Enter a movie title.";
+        return;
+    }
+
+    try {
+        const url = new URL("http://127.0.0.1:8000/movie");
+        url.searchParams.set("title", title);
+        if (year) url.searchParams.set("year", year);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        poster.src = data.Poster !== "N/A"
+            ? data.Poster
+            : "https://via.placeholder.com/260x390?text=No+Poster";
+
+        movieTitle.textContent = data.Title;
+        movieYear.textContent = data.Year;
+        movieRated.textContent = data.Rated;
+        movieRuntime.textContent = data.Runtime;
+        movieLanguage.textContent = data.Language;
+        moviePlot.textContent = data.Plot;
+        movieRating.textContent = data.imdbRating;
+
+        currentTitle = data.Title;
+        currentYear = data.Year;
+
+        card.style.display = "flex";
+    } catch {
+        error.textContent = "Movie not found or server down.";
+    }
+}
+
+async function addToPlaylist() {
+    const msg = document.getElementById("playlistMsg");
+
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:8000/playlist/add?title=${encodeURIComponent(currentTitle)}&year=${currentYear}`,
+            { method: "POST" }
+        );
+
+        const data = await res.json();
+        msg.textContent = data.error || "✅ Added!";
+    } catch {
+        msg.textContent = "Server error.";
+    }
+}
+
+/* =======================
+   PLAYLIST (WITH DELETE)
+======================= */
+async function showPlaylist() {
+    const container = document.getElementById("playlistContainer");
+
+    // Toggle visibility
+    if (container.style.display === "block") {
+        container.style.display = "none";
+        return;
+    }
+
+    container.style.display = "block";
+    container.innerHTML = "Loading playlist...";
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/playlist");
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        if (Object.keys(data).length === 0) {
+            container.innerHTML = "<p>No movies saved yet.</p>";
+            return;
+        }
+
+        let html = "<h2>🎞 Your Playlist</h2>";
+        html += "<div style='display:flex; flex-wrap:wrap; gap:18px;'>";
+
+        for (const id in data) {
+            const m = data[id];
+
+            html += `
+            <div style="
+                width:180px;
+                background:var(--card);
+                padding:12px;
+                border-radius:12px;
+                position:relative;
+            ">
+                <button
+                    onclick="deleteFromPlaylist('${m.Title.replace(/'/g, "\\'")}', '${m.Year}')"
+                    style="
+                        position:absolute;
+                        top:8px;
+                        right:8px;
+                        border:none;
+                        background:rgba(0,0,0,0.6);
+                        color:white;
+                        border-radius:50%;
+                        width:28px;
+                        height:28px;
+                        cursor:pointer;
+                    "
+                    title="Remove from playlist"
+                >
+                    🗑️
+                </button>
+
+                <img src="${m.Poster !== 'N/A'
+                    ? m.Poster
+                    : 'https://via.placeholder.com/180x270?text=No+Poster'}"
+                    style="width:100%; border-radius:8px;">
+
+                <h4>${m.Title}</h4>
+                <p>${m.Year}</p>
+                <p>⭐ ${m.imdbRating}</p>
+            </div>
+            `;
+        }
+
+        html += "</div>";
+        container.innerHTML = html;
+
+    } catch {
+        container.innerHTML = "<p style='color:red'>Server error</p>";
+    }
+}
+
+async function deleteFromPlaylist(title, year) {
+    const confirmDelete = confirm(
+        "YOU'RE REMOVING THIS.\n\nDo you want to remove this movie from your playlist?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:8000/playlist/delete?title=${encodeURIComponent(title)}&year=${year}`,
+            { method: "DELETE" }
+        );
+
+        if (!res.ok) throw new Error();
+
+        // Refresh playlist after deletion
+        showPlaylist();
+    } catch {
+        alert("Failed to remove movie.");
+    }
+}
+</script>
+
+
+</body>
+</html>
